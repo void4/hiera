@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Thread{% endblock %}
+
+{% block content %}
+
+<div id="app">
+  <h1><a href="/">Index</a></h1>
+
+  <h2>{{ thread.title }}</h2>
+
+  <input ref="rootcomment" type="text">
+  <button @click="request('thread_comment', {thread_id: thread.id, comment: $refs['rootcomment'].value})">create root comment</button>
+
+  <tree-menu
+    v-for="child in thread.children" v-bind:key="child.id"
+    :node="child"
+    :depth="0"
+  >
+  </tree-menu>
+
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+
+<style>
+.tree-menu {
+  border: 1px solid purple;
+  margin: 1em;
+}
+
+.tree-menu:nth-child(2n) {
+    background-color: rgba(0,0,120,0.2);
+}
+
+.tree-menu:nth-child(2n+1) {
+    background-color: rgba(0,0,100,0.2);
+}
+</style>
+
+<script>
+// Register a global custom directive called `v-focus`
+Vue.directive('focus', {
+  // When the bound element is inserted into the DOM...
+  inserted: function (el) {
+    // Focus the element
+    el.focus()
+  }
+})
+
+Vue.component("tree-menu", {
+  data: function() {
+    return {
+      hidden: false,
+      response: false,
+      error: "",
+    }
+  },
+  props: [ 'node', 'depth' ],
+  name: 'tree-menu',
+  methods: {
+    request(a,b,c) {
+      this.$root.request(a,b,c)
+    },
+  },
+  computed: {
+    thread() {
+      return this.$root.thread
+    },
+  },
+  template: `
+  <div class="tree-menu" style="margin-left: 20px; margin-right: 20px;" :id="node.id">
+    <template v-if="hidden">
+      <button @click="hidden=false;">+</button>
+    </template>
+    <template v-else>
+      <div>
+        <button @click="hidden=true;">-</button>
+
+        <span style="word-wrap: break-word;">{{ node.comment }}</span>
+
+
+        <template v-if="response">
+          <input type="text" size="40" :ref="'comment_'+node.id" :value="response == 'edit' ? node.comment : ''" v-focus v-once>
+          <template v-if="response == 'reply'">
+            <button @click="request('thread_comment', {thread_id: thread.id, parent_id: node.id, comment: $refs['comment_'+node.id].value}, function() {$refs['comment_'+node.id].value = ''; response = false;})">reply</button>
+          </template>
+          <template v-else>
+            <button @click="request('thread_comment_edit', {thread_id: thread.id, node_id: node.id, comment: $refs['comment_'+node.id].value}, function() {$refs['comment_'+node.id].value = ''; response = false;})">save</button>
+          </template>
+          <button @click="response=false;">cancel</button>
+          <span style="color: red">{{ error }}</span>
+        </template>
+        <template v-else>
+          <button @click="response='reply';">reply</button>
+        </template>
+
+        <button v-if="!response" @click="response='edit';">edit</button>
+        <button v-if="!response" @click="request('thread_comment_delete', {'thread_id': thread.id, 'node_id':node.id})">delete</button>
+      </div>
+
+      <tree-menu
+        v-for="child in node.children" v-bind:key="child.id"
+        :node="child"
+        :depth="depth + 1"
+      >
+      </tree-menu>
+    </template>
+  </div>
+  `
+})
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    thread: %% thread|tojson %%,
+  },
+  methods: {
+    request(path, data, func) {
+      axios.post("/"+path, data)
+      .then(function (response) {
+        for (const [key, value] of Object.entries(response.data)) {
+          app[key] = value
+        }
+        if (func !== undefined) {
+          func(response)
+        }
+      })
+    },
+  }
+})
+
+</script>
+
+{% endblock %}

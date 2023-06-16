@@ -5,35 +5,60 @@ from flask import render_template, request, jsonify
 from app import *
 from db import *
 
+
 @app.route("/")
 def r_index():
-    return render_template("index.html", somedata="hello", somelistdata=[1,2,3,4,5])
+    return render_template("index.html", threads=get_all_threads())
 
-@app.route("/newlist", methods=["POST"])
-def r_newlist():
-    l = [1,2,3,4,5]
 
-    shuffle(l)
+@app.route("/t/<thread_id>")
+def r_thread(thread_id):
+    return render_template("thread.html", thread=get_thread(thread_id))
 
-    return jsonify({"somelistdata": l})
 
-@app.route("/square", methods=["POST"])
-def r_square():
-    """squares a number, checks the database first if the number was already computed,
-    if so, it returns the cached result,
-    if not, it adds the number and its result to the database
-    before sending it back to the user"""
+@app.route("/thread_create", methods=["POST"])
+def r_thread_create():
+    title = request.json["title"]
+    create_thread(title)
+    return jsonify({"threads": get_all_threads()})
 
-    number = float(request.json["number"])
 
-    cached = get_cache(number)
-    if cached is not None:
-        print("cached!")
-        number_squared = cached
+@app.route("/thread_comment", methods=["POST"])
+def r_thread_comment():
+    thread_id = request.json["thread_id"]
+    parent_id = request.json.get("parent_id")
+    comment = request.json["comment"]
+    add_comment(thread_id, parent_id, comment)
+    return jsonify({"thread": get_thread(thread_id)})
+
+
+@app.route("/thread_comment_edit", methods=["POST"])
+def r_thread_comment_edit():
+    thread_id = request.json["thread_id"]
+    node_id = request.json["node_id"]
+    comment = request.json["comment"]
+
+    edit_comment(thread_id, node_id, comment)
+
+    return jsonify({"thread": get_thread(thread_id)})
+
+@app.route("/thread_comment_delete", methods=["POST"])
+def r_thread_comment_delete():
+    thread_id = request.json["thread_id"]
+    parent_id = request.json.get("parent")
+    node_id = request.json["node_id"]
+
+    thread = get_thread(thread_id)
+
+    if parent_id is None:
+        parent = thread
     else:
-        number_squared = number**2
-        set_cache(number, number_squared)
+        parent = getNode(thread, parent_id)
 
-    return jsonify({"someresult": number_squared})
+    parent["children"] = [child for child in parent["children"] if child["id"] != node_id]
+
+    set_thread(thread)
+
+    return jsonify({"thread": get_thread(thread_id)})
 
 app.run("localhost", 1337, debug=True)

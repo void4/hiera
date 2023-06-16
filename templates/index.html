@@ -1,25 +1,18 @@
 {% extends "base.html" %}
 
-{% block title %}Lazyweb - Index{% endblock %}
+{% block title %}Index{% endblock %}
 
 {% block content %}
 
 <div id="app">
-  <h1><a href="/">Lazyweb</a></h1>
+  <h1><a href="/">Index</a></h1>
 
-  Some data: {{ somedata }}
-  <br><br>
-  Some list data:
   <ul>
-    <li v-for="datum in somelistdata">{{ datum }}
+    <li v-for="thread in threads"><a :href="'/t/'+thread.id">{{ thread.title }}</a></li>
   </ul>
 
-  <button @click="request('newlist')">This list is boring, I want a new list!</button><br><br>
-
-  <br><br>
-  <input type="number" v-model="somenumber"></input>
-  <button @click="request('square', {'number': somenumber})">Calculate square on server</button><br><br>
-  Result: {{ someresult }}
+  <input ref="thread_create_title" type="text" placeholder="title">
+  <button @click="request('thread_create', {'title': $refs['thread_create_title'].value})">create new thread</button>
 
 </div>
 
@@ -32,12 +25,7 @@
 var app = new Vue({
   el: '#app',
   data: {
-    somedata: %% somedata|tojson %%,
-
-    somelistdata: %% somelistdata|tojson %%,
-
-    somenumber: 7,
-    someresult: null
+    threads: %% threads|tojson %%,
   },
   methods: {
     request(path, data) {
