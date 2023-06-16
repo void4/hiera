@@ -1,6 +1,8 @@
-# Lazyweb
+# Lazyweb-Hiera
 
-The laziest way I found so far for creating custom web apps
+The laziest way I found so far for creating custom web apps.
+
+Extended example with comment tree
 
 ![image preview](preview.png)
 
