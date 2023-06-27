@@ -10,12 +10,12 @@ Tested with Python 3.9.12
 
 ## Download
 
-```git clone https://github.com/void4/lazyweb.git```
+```git clone https://github.com/void4/hiera.git```
 
 ## Install dependencies
 
 ```
-cd lazyweb
+cd hiera
 python -m pip install -r requirements.txt
 ```
 
